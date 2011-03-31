@@ -2,12 +2,32 @@
 
 ICONV_CUE_F=
 ICONV_CUE_T=UTF8
+# replace to "iconv" if want use iconv by default. Now use enconv (enca)
+# require enca: http://gitorious.org/enca
+ICONV_TYPE=enca
 
-while getopts 'hc:' OPTION
+NO_ICONV=N
+
+while getopts 'hc:t:n' OPTION
 do
     case $OPTION in
     c)
         ICONV_CUE_F=$OPTARG
+        ;;
+    t)
+        if [ "${OPTARG}" = "enca" ]; then
+            ICONV_TYPE=enca
+        elif [ "${OPTARG}" = "iconv" ]; then
+            # FIXIT: required strict order params
+            #if [ -z "$ICONV_CUE_F" ]; then
+            #    echo "Param [ -c cue_encoding ] required when using iconv as conversion type"
+            #    exit 2
+            #fi
+            ICONV_TYPE=iconv
+        fi 
+        ;;
+    n)
+        NO_ICONV=Y
         ;;
     h)
         printf "Usage: %s: [-c cue_encoding]\n" $(basename $0) >&2
@@ -44,11 +64,24 @@ do
         rm -rf $WORKDIR
         mkdir $WORKDIR
 
-        if [ "x$ICONV_CUE_F" != "x" ]; then
-           echo "Converting cue $CUE"
-           iconv -f $ICONV_CUE_F -t $ICONV_CUE_T "$CUE" -o "$WORKDIR/$CUE"
+        if [ "x$ICONV_TYPE" = "xiconv" ]; then
+            # use iconv
+            if [ "x$ICONV_CUE_F" != "x" ]; then
+               echo "Converting cue (use iconv) $CUE"
+               iconv -f $ICONV_CUE_F -t $ICONV_CUE_T "$CUE" -o "$WORKDIR/$CUE"
+            else
+               cp "$CUE" "$WORKDIR/$CUE"
+            fi
         else
-           cp "$CUE" "$WORKDIR/$CUE"
+            # use enca
+            cp "$CUE" "$WORKDIR/$CUE"
+            if [ "x$ICONV_CUE_F" != "x" ]; then
+               echo "Converting cue (use enconv) $CUE"
+               enconv -x $ICONV_CUE_F "$WORKDIR/$CUE"
+            elif [ "$NO_ICONV" != "Y" ]; then
+               echo "Converting cue (use enconv) $CUE"
+               enconv "$WORKDIR/$CUE"
+            fi
         fi && \
 
         shnsplit -d $WORKDIR -o flac -f "$WORKDIR/$CUE" -t "%n – %t" "$IMAGE" && \
