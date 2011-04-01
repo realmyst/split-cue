@@ -5,6 +5,7 @@ ICONV_CUE_T=UTF8
 # replace to "iconv" if want use iconv by default. Now use enconv (enca)
 # require enca: http://gitorious.org/enca
 ICONV_TYPE=enca
+APEINFO=`which apeinfo`
 
 NO_ICONV=N
 
@@ -47,6 +48,9 @@ test_disk_image() {
 copy_tags_from_parent() {
     # source tag flac-file
     flacfile=$1
+    FILETYPE=$(echo "${flacfile##*.}" | sed 's/\(.*\)/\L\1/')
+    SOURCE_TAGS_FILE=.sourse_tag_file.$$
+    TAGS_FILE=.result_tag_file.$$
 
     if [ -n $2 ] ; then
         workdir="$2/"
@@ -54,20 +58,12 @@ copy_tags_from_parent() {
         workdir="./"
     fi
 
-    # this taglist will be parsed in flac-file
-    fields='TITLE VERSION ALBUM TRACKNUMBER TRACKTOTAL ARTIST PERFORMER COPYRIGHT LICENSE ORGANIZATION DESCRIPTION GENRE DATE LOCATION CONTACT ISRC'
-
-    SOURCE_TAGS_FILE=.sourse_tag_file.$$
-    TAGS_FILE=.result_tag_file.$$
-
     : > $SOURCE_TAGS_FILE
-    for field in $fields
-    do
-        tag=`metaflac --show-tag=${field} "${flacfile}"`
-        if [ -n "${tag}" ]; then
-            echo ${tag} >> $SOURCE_TAGS_FILE
-        fi
-    done
+    if [ $FILETYPE = "flac" ]; then
+        metaflac --export-tags-to=${SOURCE_TAGS_FILE} "${flacfile}"
+    else
+        $APEINFO -t "${flacfile}" > ${SOURCE_TAGS_FILE}
+    fi
 
     find "${workdir}" -name '*.flac' -size -100M | while read file
     do
@@ -88,21 +84,20 @@ copy_tags_from_parent() {
     rm -f $SOURCE_TAGS_FILE $TAGS_FILE
 }
 
-
-
 BASEDIR=${PWD}
 SAVEIFS=$IFS
 IFS='\n'
 WORKDIR=.tmp-split-cue-flac
 
-find ./ -name '*.flac' -size +100M |  while read image
+find ./ \( -name '*.flac' -o -name '*.ape' \) -size +100M |  while read image
 do
     echo "$image"
+    FILETYPE=$(echo "${image##*.}" | sed 's/\(.*\)/\L\1/')
     DIR=`dirname "$image"`
     BASE=`basename "$image"`
-    BASE=`echo "$BASE" | sed -e 's/.flac//'`
+    BASE=`echo "$BASE" | sed -e "s/.${FILETYPE}//"`
     CUE=$BASE.cue
-    IMAGE=$BASE.flac
+    IMAGE=$BASE.$FILETYPE
     if [ ! -f "$DIR/$CUE" ] ; then
         CUE=$IMAGE.cue
         echo $CUE
