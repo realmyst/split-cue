@@ -103,6 +103,13 @@ do
     BASE=`echo "$BASE" | sed -e 's/.flac//'`
     CUE=$BASE.cue
     IMAGE=$BASE.flac
+    if [ ! -f "$DIR/$CUE" ] ; then
+        CUE=$IMAGE.cue
+        echo $CUE
+        if [ ! -f "$DIR/$CUE" ]; then
+            continue
+        fi
+    fi
 
     cd "$DIR"
         echo "Splitting with shnsplit"
