@@ -44,6 +44,49 @@ test_disk_image() {
     fi
 }
 
+copy_tags_from_parent() {
+    # source tag flac-file
+    flacfile=$1
+
+    if [ -n $2 ] ; then
+        workdir="$2/"
+    else
+        workdir="./"
+    fi
+
+    # this taglist will be parsed in flac-file
+    fields='TITLE VERSION ALBUM TRACKNUMBER TRACKTOTAL ARTIST PERFORMER COPYRIGHT LICENSE ORGANIZATION DESCRIPTION GENRE DATE LOCATION CONTACT ISRC'
+
+    SOURCE_TAGS_FILE=.sourse_tag_file.$$
+    TAGS_FILE=.result_tag_file.$$
+
+    : > $SOURCE_TAGS_FILE
+    for field in $fields
+    do
+        tag=`metaflac --show-tag=${field} "${flacfile}"`
+        if [ -n "${tag}" ]; then
+            echo ${tag} >> $SOURCE_TAGS_FILE
+        fi
+    done
+
+    find "${workdir}" -name '*.flac' -size -100M | while read file
+    do
+        if [ ! -f $TAGS_FILE ] ; then
+            while read line ; do
+                TAG=`echo $line | awk -F= '{print $1}'`
+                exist="`metaflac --show-tag="${TAG}" "${file}"`"
+                if [ -z "${exist}" ] ; then
+                    echo $line >> $TAGS_FILE
+                fi
+            done < $SOURCE_TAGS_FILE
+            `metaflac --import-tags-from="${TAGS_FILE}" "${file}"`
+        fi
+    done
+
+    rm -f $SOURCE_TAGS_FILE $TAGS_FILE
+}
+
+
 
 BASEDIR=${PWD}
 SAVEIFS=$IFS
@@ -86,11 +129,16 @@ do
 
         shnsplit -d $WORKDIR -o flac -f "$WORKDIR/$CUE" -t "%n – %t" "$IMAGE" && \
 
-        echo "Moving $IMAGE -> ${IMAGE}.image" && \
-        mv "$IMAGE" "${IMAGE}.image" && \
-
         echo "Fixing tags with cuetag" && \
         cuetag "$WORKDIR/$CUE" ./$WORKDIR/*.flac && \
+
+        IFS=' ' && \
+        echo "Copy tags from ${IMAGE} to new files" && \
+        copy_tags_from_parent "${IMAGE}" "${WORKDIR}" && \
+        IFS='\n' && \
+
+        echo "Moving $IMAGE -> ${IMAGE}.image" && \
+        mv "$IMAGE" "${IMAGE}.image" && \
 
         test_disk_image "$IMAGE" && \
 
