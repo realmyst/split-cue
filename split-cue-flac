@@ -79,9 +79,9 @@ copy_tags_from_parent() {
                     echo $line >> $TAGS_FILE
                 fi
             done < $SOURCE_TAGS_FILE
-            if [ -f $TAGS_FILE ] ; then
-                `metaflac --import-tags-from="${TAGS_FILE}" "${file}"`
-            fi
+        fi
+        if [ -f $TAGS_FILE ] ; then
+            `metaflac --import-tags-from="${TAGS_FILE}" "${file}"`
         fi
     done
 
