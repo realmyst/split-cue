@@ -7,7 +7,8 @@ else
     SEARCH_DIR="./"
 fi
 
-find ${SEARCH_DIR} -name "*.flac.image" | while read file
+
+find "${SEARCH_DIR}" -name "*.flac.image" | while read file
 do
     DIR=`dirname "${file}"`
     file_wo_ext=`basename "${file}" | sed -e 's/.flac.image//'`
