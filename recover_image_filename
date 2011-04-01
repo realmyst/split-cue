@@ -1,0 +1,16 @@
+#!/bin/sh
+#script move filename.flac.image to filename.flac
+
+if [ -n "${1}" ] ; then
+    SEARCH_DIR="$1"
+else
+    SEARCH_DIR="./"
+fi
+
+find ${SEARCH_DIR} -name "*.flac.image" | while read file
+do
+    DIR=`dirname "${file}"`
+    file_wo_ext=`basename "${file}" | sed -e 's/.flac.image//'`
+    echo "Moving: \"${file}\" -> \"${DIR}/${file_wo_ext}.flac\""
+    mv "${file}" "${DIR}/${file_wo_ext}.flac"
+done
