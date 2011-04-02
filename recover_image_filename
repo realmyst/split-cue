@@ -5,13 +5,13 @@ if [ -n "${1}" ] ; then
     SEARCH_DIR="$1"
 else
     SEARCH_DIR="./"
-fi
+fi                                                   
 
 
-find "${SEARCH_DIR}" -name "*.flac.image" | while read file
+find "${SEARCH_DIR}" \( -name '*.flac.image' -o -name '*.ape.image' \) | while read file
 do
     DIR=`dirname "${file}"`
-    file_wo_ext=`basename "${file}" | sed -e 's/.flac.image//'`
-    echo "Moving: \"${file}\" -> \"${DIR}/${file_wo_ext}.flac\""
-    mv "${file}" "${DIR}/${file_wo_ext}.flac"
+    file_wo_ext=`basename "${file}" | sed -e 's/.image$//'`
+    echo "Moving: \"${file}\" -> \"${DIR}/${file_wo_ext}\""
+    mv "${file}" "${DIR}/${file_wo_ext}"
 done
