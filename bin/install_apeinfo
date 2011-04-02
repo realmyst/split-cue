@@ -1,0 +1,12 @@
+#!/bin/sh
+APEINFO=$(which apeinfo 2>/dev/null)
+if [ -n "${APEINFO}" ] ; then
+    echo "apeinfo is already install"
+    exit 2
+fi
+LONG_BIT=`getconf LONG_BIT`
+
+cp ${PWD}/apeinfo_${LONG_BIT} /usr/local/bin/apeinfo
+chmod a+x /usr/local/bin/apeinfo
+
+echo which apeinfo: `which apeinfo`
