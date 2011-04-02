@@ -95,7 +95,14 @@ copy_tags_from_parent() {
     do
         if [ ! -f $TAGS_FILE ] ; then
             while read line ; do
-                TAG=`echo $line | awk -F= '{print $1}'`
+                if [ `expr match "$line" '.*=.*'` -gt 0 ] ; then
+                    TAG=`echo $line | awk -F= '{print $1}'`
+                else
+                    continue
+                fi
+                # ignoring tag CUESHEET
+                if [ "x$TAG" = "xCUESHEET" ]; then continue; fi
+
                 exist="`metaflac --show-tag="${TAG}" "${file}"`"
                 if [ -z "${exist}" ] ; then
                     echo $line >> $TAGS_FILE
