@@ -45,6 +45,27 @@ test_disk_image() {
     fi
 }
 
+#try fix this function
+repair_cue() {
+    FIRST_TRACK=N
+    while read lineFromCue
+    do
+        if [ `expr match "$lineFromCue" '[[:blank:][:space:]]\{0,\}TRACK.*'` -gt 0 ] ; then
+            if [ `expr match "${lineFromCue}" '[[:blank:][:space:]]\{0,\}TRACK 01.*'` -gt 0 ] ; then
+                FIRST_TRACK=Y
+            else
+                FIRST_TRACK=N
+            fi
+        elif [ `expr match "$lineFromCue" '[[:blank:][:space:]]\{0,\}INDEX 01'` -gt 0 ] ; then
+            echo "Repair cue [$1]"
+            newIndex=`echo "${lineFromCue}" | awk '{print $3}'`
+            newLine=`echo "${lineFromCue}" | sed -e "s/${newIndex}/00:00:00/"`
+            `sed -i "s/$lineFromCue/$newLine/" "$1"`
+            break
+        fi
+    done < $1
+}
+
 copy_tags_from_parent() {
     # source tag flac-file
     flacfile=$1
@@ -130,6 +151,8 @@ do
                enconv "$WORKDIR/$CUE"
             fi
         fi && \
+
+        repair_cue "$WORKDIR/$CUE" && \
 
         shnsplit -d $WORKDIR -o flac -f "$WORKDIR/$CUE" -t "%n – %t" "$IMAGE" && \
 
